@@ -24,7 +24,6 @@ module "subnets" {
 module "network_loadbalancer" {
   source                         = "github.com/Greg215/terraform-aws-eks//nlb?ref=main"
   name                           = "ritz-nlb-eks"
-  aws_region                     = "ap-southeast-1"
   vpc_id                         = module.vpc.vpc_id
   vpc_public_subnet_ids          = module.subnets.public_subnet_ids
   aws-load-balancer-ssl-cert-arn = "arn:aws:acm:ap-southeast-1:545573948854:certificate/9e9ef1d3-1913-419f-9a9d-72e4c96acfc4"
