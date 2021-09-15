@@ -1,4 +1,13 @@
 version: 2.1
+
+parameters:
+  terraform_apply:
+    type: boolean
+    default: false
+  terraform_destroy:
+    type: boolean
+    default: true
+
 orbs:
   slack: circleci/slack@4.4.4
   terraform: circleci/terraform@3.0.0
@@ -91,8 +100,27 @@ jobs:
           event: always
           channel: circleci-notification
 
+  terraform_destroy:
+    machine:
+      image: ubuntu-1604:202007-01
+    steps:
+      - checkout
+      - terraform/install:
+          arch: amd64
+          os: linux
+          terraform_version: 1.0.5
+      - terraform/init:
+          path: .
+      - terraform/plan:
+          path: .
+      - run:
+          name: "Destruction of env"
+          command: |
+            terraform destroy --auto-approve -input=false
+
 workflows:
   terraform_create_eks_cluster:
+    when: << pipeline.parameters.terraform_apply >>
     jobs:
       - slack_notify
       - terraform_init:
@@ -110,3 +138,22 @@ workflows:
           terraform_action: create
           requires:
             - terraform_apply
+  terraform_remove_eks_cluster:
+    when: << pipeline.parameters.terraform_destroy >>
+    jobs:
+      - slack_notify
+      - terraform_init:
+          requires:
+            - slack_notify
+
+      - terraform_destroy:
+          requires:
+            - terraform_init
+          filters:
+            branches:
+              only: master
+
+      - slack_notify_action:
+          terraform_action: create
+          requires:
+            - terraform_destroy
