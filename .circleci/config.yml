@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   slack: circleci/slack@4.4.4
+  terraform: circleci/terraform@3.0.0
 
 jobs:
   slack_notify:
@@ -29,7 +30,83 @@ jobs:
           event: always
           channel: circleci-notification
 
+  terraform_init:
+    docker:
+      - image: hashicorp/terraform:1.0.5
+    steps:
+      - checkout
+      - terraform/init:
+          path: .
+      - terraform/validate:
+          path: .
+      - terraform/fmt:
+          path: .
+      - terraform/plan:
+          path: .
+
+  terraform_apply:
+    docker:
+      - image: hashicorp/terraform:1.0.5
+    steps:
+      - checkout
+      - run:
+          name: install curl
+          command: |
+            apk --no-cache add curl
+      - terraform/init:
+          path: .
+      - terraform/plan:
+          path: .
+      - terraform/apply:
+          path: .
+
+  slack_notify_action:
+    machine:
+      image: ubuntu-1604:202007-01
+    parameters:
+      terraform_action:
+        description: |
+          If to create to remove the cluster
+        type: string
+    steps:
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "<< parameters.terraform_action >> the EKS cluster via terraform by $CIRCLE_USERNAME has been done",
+                      "emoji": true
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                }
+              ]
+            }
+          event: always
+          channel: circleci-notification
+
 workflows:
   terraform_create_eks_cluster:
     jobs:
       - slack_notify
+      - terraform_init:
+          requires:
+            - slack_notify
+
+      - terraform_apply:
+          requires:
+            - terraform_init
+          filters:
+            branches:
+              only: master
+
+      - slack_notify_action:
+          terraform_action: create
+          requires:
+            - terraform_apply
