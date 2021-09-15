@@ -3,31 +3,31 @@ orbs:
   slack: circleci/slack@4.4.4
 
 jobs:
-slack_notify:
-  machine:
-    image: ubuntu-1604:202007-01
-  steps:
-    - slack/notify:
-        custom: |
-          {
-            "blocks": [
-              {
-                "type": "section",
-                "fields": [
-                  {
-                    "type": "plain_text",
-                    "text": "Start to Create or Update or Remove the EKS cluster via terraform by $CIRCLE_USERNAME",
-                    "emoji": true
-                  }
-                ]
-              },
-              {
-                "type": "divider"
-              }
-            ]
-          }
-        event: always
-        channel: circleci-notification
+  slack_notify:
+    machine:
+      image: ubuntu-1604:202007-01
+    steps:
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "Start to Create or Update or Remove the EKS cluster via terraform by $CIRCLE_USERNAME",
+                      "emoji": true
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                }
+              ]
+            }
+          event: always
+          channel: circleci-notification
 
 workflows:
   terraform_create_eks_cluster:
